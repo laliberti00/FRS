@@ -1,1 +1,1 @@
-# FRS
+# FuzzyRecommenderSystem
