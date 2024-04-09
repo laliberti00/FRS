@@ -27,26 +27,26 @@ def calc_user_signature(matrix, tag_popularity):
     user_signature = matrix.multiply(tag_popularity, axis="columns")
     return user_signature
 
+def main():
+    for i in range(10):
+        data_path = f'../../data/training_data/training{i}.pkl'
+        data_users = pd.read_pickle(data_path)
+        users_path = '../../data/user_data/users.pkl'
+        users = pd.read_pickle(users_path)
 
-for i in range(10):
-    data_path = f'../../data/training_data/training{i}.pkl'
-    data_users = pd.read_pickle(data_path)
-    users_path = '../../data/user_data/users.pkl'
-    users = pd.read_pickle(users_path)
+        items_path = '../../data/item_data/items.pkl'
+        items = pd.read_pickle(items_path)
+        movies = items['movie_title']
 
-    items_path = '../../data/item_data/items.pkl'
-    items = pd.read_pickle(items_path)
-    movies = items['movie_title']
+        for user_id in tqdm(users['user_id']):
+            user_activity = data_users[data_users['user_id'] == user_id]
 
-    for user_id in tqdm(users['user_id']):
-        user_activity = data_users[data_users['user_id'] == user_id]
+            if not user_activity.empty:
+                user_signature = create_matrix_ones(movies, user_activity)
+                tag_pop = calc_tag_popularity(user_signature)
+                user_signature = calc_user_signature(user_signature, tag_pop)
 
-        if not user_activity.empty:
-            user_signature = create_matrix_ones(movies, user_activity)
-            tag_pop = calc_tag_popularity(user_signature)
-            user_signature = calc_user_signature(user_signature, tag_pop)
-
-            save_path = f'../../data/user_signatures/fold{i}'
-            os.makedirs(save_path, exist_ok=True)
-            filename_save = f'f_user_sign{user_id}.pkl'
-            user_signature.to_pickle(os.path.join(save_path, filename_save))
+                save_path = f'../../data/user_signatures/fold{i}'
+                os.makedirs(save_path, exist_ok=True)
+                filename_save = f'f_user_sign{user_id}.pkl'
+                user_signature.to_pickle(os.path.join(save_path, filename_save))

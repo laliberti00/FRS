@@ -11,8 +11,6 @@ def calc_mae(predictions, user_test):
     errors = []
     for pred in predictions.values:
         filtered_user_test = user_test.loc[user_test["movie_id"] == pred[1], 'rating']
-        if filtered_user_test.empty:
-            filtered_user_test = user_test.loc[user_test["movie_id"] == pred[1], 'rating']
 
         if not filtered_user_test.empty:
             true_rating = filtered_user_test.values[0]
@@ -41,31 +39,38 @@ def calc_rmse(predictions, user_test):
     return round(rmse, 3)
 
 
-def calc_coverage(predictions, test_set):
-    # Assicura che predicted_rating sia di tipo numerico
-    predictions['predicted_rating'] = pd.to_numeric(predictions['predicted_rating'], errors='coerce')
+def calc_coverage(user_test, predictions):
+    correct_pred_pos = 0
+    correct_pred_neg = 0
+    total_test_len_pos = 0
+    total_test_len_neg = 0
+    correct_pred_tot = 0
+    total_test_len = user_test.shape[0]
 
-    # Filtra i set positivi e negativi dal test_set basandosi sul rating
-    positive_test = test_set[test_set['rating'] >= 3]
-    negative_test = test_set[test_set['rating'] < 3]
+    for index, row in predictions.iterrows():
+        if row['movie_id'] in user_test['movie_id'].values:
+            true_rating = user_test[user_test['movie_id'] == row['movie_id']]['predicted_rating'].values[0]
+            predicted_rating = row['rating']
 
-    # Calcola la copertura positiva
-    positive_coverage = predictions.apply(
-        lambda x: 1 if x['movie_id'] in positive_test['movie_id'].values and x['predicted_rating'] >= 3 else 0,
-        axis=1).mean()
+            # Per valutazioni positive
+            if true_rating >= 3:
+                total_test_len_pos += 1
+                if predicted_rating >= 3:
+                    correct_pred_pos += 1
+                    correct_pred_tot += 1
 
-    # Calcola la copertura negativa
-    negative_coverage = predictions.apply(
-        lambda x: 1 if x['movie_id'] in negative_test['movie_id'].values and x['predicted_rating'] < 3 else 0,
-        axis=1).mean()
+            # Per valutazioni negative
+            elif true_rating < 3:
+                total_test_len_neg += 1
+                if predicted_rating < 3:
+                    correct_pred_neg += 1
+                    correct_pred_tot += 1
 
-    # Calcola la copertura totale
-    total_coverage = predictions.apply(
-        lambda x: 1 if x['movie_id'] in test_set['movie_id'].values else 0,
-        axis=1).mean()
+    coverage_pos = correct_pred_pos / total_test_len_pos if total_test_len_pos > 0 else 0
+    coverage_neg = correct_pred_neg / total_test_len_neg if total_test_len_neg > 0 else 0
+    coverage_tot = correct_pred_tot / total_test_len if total_test_len > 0 else 0
 
-    return round(positive_coverage, 3), round(negative_coverage, 3), round(total_coverage, 3)
-
+    return coverage_pos, coverage_neg, coverage_tot
 
 
 def main():

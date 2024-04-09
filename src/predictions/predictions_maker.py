@@ -77,10 +77,7 @@ def calc_all_predictions(experiment, num_neighbors):
 
     # Stampa un messaggio di conferma.
     print(f"Predictions for experiment {experiment} with {num_neighbors} neighbors have been saved.")
-
-# Punto di ingresso principale dello script.
-if __name__ == "__main__":
-    # Definisce il range di vicini da considerare.
+def main():
     experiments_neigh = [1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
     # Itera su ogni esperimento (assumendo 10 esperimenti in totale).
     for experiment in range(10):
@@ -89,3 +86,7 @@ if __name__ == "__main__":
             print(f"Calculating predictions with {num_neighbors} neighbors...")
             # Calcola le previsioni per l'esperimento corrente e il numero di vicini specificato.
             calc_all_predictions(experiment, num_neighbors)
+# Punto di ingresso principale dello script.
+if __name__ == "__main__":
+    main()
+
