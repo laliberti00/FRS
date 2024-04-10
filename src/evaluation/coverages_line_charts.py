@@ -89,9 +89,9 @@ plt.show()
 Y_prob_COV = [83.5, 91.7, 93.6, 92.6, 92.6, 91.8]
 
 
-plt.plot(range_neigh, cov_pos, 'k-D', label = "FUF Solution")
+plt.plot(range_neigh, cov_tot, 'k-D', label = "FUF Solution")
 plt.plot(range_neigh, Y_prob_COV, 'r-o', label = "PF Solution")
-plt.title("Coverage POSITIVE", fontsize=16, fontweight='bold')
+plt.title("Coverage Rate", fontsize=16, fontweight='bold')
 plt.xlabel("Number of neighbors", fontsize=16, fontweight='bold')
 plt.yticks(fontsize=14)
 plt.xticks(fontsize=14)

@@ -12,6 +12,7 @@ num_experiments_data = 10  # Numero di esperimenti
 maes = {k: [] for k in experiments_neigh}
 maes_users = {k: [] for k in experiments_neigh}
 rmses = {k: [] for k in experiments_neigh}
+rmses_users = {k: [] for k in experiments_neigh}
 coverage_pos = {k: [] for k in experiments_neigh}
 coverage_neg = {k: [] for k in experiments_neigh}
 coverage_tot = {k: [] for k in experiments_neigh}
@@ -25,6 +26,7 @@ for experiment in range(num_experiments_data):
             maes[k].append(np.mean(metrics[k]['MAE']))
             maes_users[k].append(np.mean(metrics[k]['MAE_users']))
             rmses[k].append(np.mean(metrics[k]['RMSE']))
+            rmses_users[k].append(np.mean(metrics[k]['RMSE_users']))
             coverage_pos[k].append(np.mean(metrics[k]['Coverage_Pos']))
             coverage_neg[k].append(np.mean(metrics[k]['Coverage_Neg']))
             coverage_tot[k].append(np.mean(metrics[k]['Coverage_Tot']))
@@ -32,6 +34,8 @@ for experiment in range(num_experiments_data):
 # Neighborhood sizes
 range_neigh = [1, 2, 4, 6, 8, 10]
 rmses_means = [np.mean(rmses[k]) for k in experiments_neigh]
+rmses_users_means = [np.mean(rmses_users[k]) for k in experiments_neigh]
+
 
 
 # Set the positions for the bars on the x-axis
@@ -43,7 +47,7 @@ x_values = np.array(experiments_neigh)  # Usare la lista 'experiments_neigh' per
 plt.figure(figsize=(10, 6))
 
 # Disegnare le linee per MAE e MAE degli utenti
-plt.plot(x_values, rmses_means,  label='RMSE', marker='o')
+plt.plot(x_values, rmses_users_means,  label='RMSE', marker='o')
 
 # Aggiungere legenda e etichette
 plt.xlabel('Number of Neighbors', fontsize=14, fontweight='bold')

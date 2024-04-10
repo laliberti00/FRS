@@ -1,3 +1,5 @@
+import math
+
 import pandas as pd
 from tqdm import tqdm
 import os
@@ -36,8 +38,11 @@ def make_prediction(user_id, movie_id, training_data, neighbors):
 
     # Calcola la previsione basandosi sulla media dell'utente e sulla somma ponderata.
     prediction = avg_user_rating
+
     if sum_similarities > 0:
         prediction += weighted_sum / sum_similarities
+    else:
+        prediction = 0
 
     # Restituisce la previsione arrotondata.
     return round(prediction)
@@ -78,7 +83,9 @@ def calc_all_predictions(experiment, num_neighbors):
     # Stampa un messaggio di conferma.
     print(f"Predictions for experiment {experiment} with {num_neighbors} neighbors have been saved.")
 def main():
-    experiments_neigh = [1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
+    #experiments_neigh = [1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
+    experiments_neigh = [1, 2, 4, 6, 8, 10]
+
     # Itera su ogni esperimento (assumendo 10 esperimenti in totale).
     for experiment in range(10):
         print(f"########### Starting experiment {experiment} ###########")

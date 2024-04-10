@@ -14,7 +14,9 @@ def calc_mae(predictions, user_test):
 
         if not filtered_user_test.empty:
             true_rating = filtered_user_test.values[0]
-            predicted_rating = pred[2]  # Assicurati che questo sia l'indice corretto per il rating predetto
+            predicted_rating = pred[2]
+            if predicted_rating == 0:
+                continue
             error = abs(predicted_rating - true_rating)
             errors.append(error)
 
@@ -26,17 +28,22 @@ def calc_mae(predictions, user_test):
 
 
 def calc_rmse(predictions, user_test):
+    # Filtra predictions per considerare solo quelle con un predicted_rating > 0
+    predictions_filtered = predictions[predictions['predicted_rating'] > 0]
+
     # Assicurati che user_test sia indicizzato per movie_id per un accesso efficiente
     user_test = user_test.set_index('movie_id')
 
-    # Ottieni solo le righe di user_test che corrispondono ai movie_id in predictions
-    matched_ratings = user_test.loc[predictions['movie_id']]['rating']
+    # Unisci predictions_filtered con user_test per assicurare che solo le righe con valori predetti > 0 siano considerate
+    merged = predictions_filtered.join(user_test, on='movie_id', how='inner', lsuffix='_pred', rsuffix='_actual')
 
-    # Calcola RMSE
-    mse = ((predictions['predicted_rating'] - matched_ratings) ** 2).mean()
-    rmse = math.sqrt(mse)
-
-    return round(rmse, 3)
+    # Calcola RMSE solo se merged non è vuoto
+    if not merged.empty:
+        mse = ((merged['predicted_rating'] - merged['rating']) ** 2).mean()
+        rmse = math.sqrt(mse)
+        return round(rmse, 3)
+    else:
+        return None
 
 
 def calc_coverage(user_test, predictions):
@@ -48,14 +55,19 @@ def calc_coverage(user_test, predictions):
     total_test_len = user_test.shape[0]
 
     for index, row in predictions.iterrows():
-        if row['movie_id'] in user_test['movie_id'].values:
-            true_rating = user_test[user_test['movie_id'] == row['movie_id']]['predicted_rating'].values[0]
-            predicted_rating = row['rating']
 
+        if row['movie_id'] in user_test['movie_id'].values:
+            true_rating = user_test[user_test['movie_id'] == row['movie_id']]['rating'].values[0]
+            predicted_rating = row['predicted_rating']
+
+            if predicted_rating > 0:
+                correct_pred_tot += 1
+
+            '''
             # Per valutazioni positive
             if true_rating >= 3:
                 total_test_len_pos += 1
-                if predicted_rating >= 3:
+                if predicted_rating > 0:
                     correct_pred_pos += 1
                     correct_pred_tot += 1
 
@@ -65,23 +77,28 @@ def calc_coverage(user_test, predictions):
                 if predicted_rating < 3:
                     correct_pred_neg += 1
                     correct_pred_tot += 1
+        else:
+            print('OUT')
+            '''
 
-    coverage_pos = correct_pred_pos / total_test_len_pos if total_test_len_pos > 0 else 0
-    coverage_neg = correct_pred_neg / total_test_len_neg if total_test_len_neg > 0 else 0
+
+    #coverage_pos = correct_pred_pos / total_test_len_pos if total_test_len_pos > 0 else 0
+    #coverage_neg = correct_pred_neg / total_test_len_neg if total_test_len_neg > 0 else 0
     coverage_tot = correct_pred_tot / total_test_len if total_test_len > 0 else 0
 
-    return coverage_pos, coverage_neg, coverage_tot
+    return 0, 0, coverage_tot
 
 
 def main():
-    experiments_neigh = [1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
+    #experiments_neigh = [1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
+    experiments_neigh = [1, 2, 4, 6, 8, 10]
     num_experiments_data = list(range(10))
 
     overall_metrics = {}
 
     for experiment in tqdm(num_experiments_data):
         fold_metrics = {
-            num: {'MAE': [], 'MAE_users': [], 'RMSE': [], 'Coverage_Pos': [], 'Coverage_Neg': [], 'Coverage_Tot': []}
+            num: {'MAE': [], 'MAE_users': [], 'RMSE': [], 'RMSE_users': [], 'Coverage_Pos': [], 'Coverage_Neg': [], 'Coverage_Tot': []}
             for num
             in experiments_neigh}
 
@@ -99,7 +116,7 @@ def main():
 
             mae = calc_mae(predictions, test_set)
             rmse = calc_rmse(predictions, test_set)
-            coverage_pos, coverage_neg, coverage_tot = calc_coverage(predictions, test_set)
+            coverage_pos, coverage_neg, coverage_tot = calc_coverage(test_set, predictions)
 
             fold_metrics[num_neighbors]['MAE'].append(mae)
             fold_metrics[num_neighbors]['RMSE'].append(rmse)
@@ -110,6 +127,7 @@ def main():
 
             grouped_predictions = predictions.groupby('user_id')
             individual_mae_users = []
+            individual_rmse_users = []
 
             for user_id, group in grouped_predictions:
 
@@ -117,9 +135,14 @@ def main():
                 user_predictions = group[['user_id', 'movie_id', 'predicted_rating']].reset_index(drop=True)
 
                 mae_users = calc_mae(user_predictions, user_test)
-                individual_mae_users.append(mae_users)
+                if mae_users is not None:
+                    individual_mae_users.append(mae_users)
+                rmse_users = calc_rmse(user_predictions, user_test)
+                if rmse_users is not None:
+                    individual_rmse_users.append(rmse_users)
 
             fold_metrics[num_neighbors]['MAE_users'] = np.mean(individual_mae_users)
+            fold_metrics[num_neighbors]['RMSE_users'] = np.mean(individual_rmse_users)
 
         results_filename = f'fold_{experiment}_metrics.pkl'
         with open(os.path.join(evaluation_folder, results_filename), 'wb') as f:
@@ -140,7 +163,7 @@ def main():
 
     # Calcola e stampa i risultati aggregati su tutti i fold
     aggregated_results = {
-        num: {'MAE': [], 'MAE_users': [], 'RMSE': [], 'Coverage_Pos': [], 'Coverage_Neg': [], 'Coverage_Tot': []} for
+        num: {'MAE': [], 'MAE_users': [], 'RMSE': [],'RMSE_users': [], 'Coverage_Pos': [], 'Coverage_Neg': [], 'Coverage_Tot': []} for
         num in experiments_neigh}
     for experiment, metrics in overall_metrics.items():
         for num_neighbors, values in metrics.items():
