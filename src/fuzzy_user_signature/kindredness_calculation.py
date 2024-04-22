@@ -10,12 +10,17 @@ def load_filter_data(num_train):
     users = pd.read_pickle('../../data/user_data/users.pkl')
     return data_users, users
 
-def calc_similarity(user, neighbor):
+def calc_similarity(user, neighbor, alpha=-1):
     user_aligned, neighbor_aligned = user.align(neighbor, join='inner', axis=1)
     user_array = user_aligned.values
     neighbor_array = neighbor_aligned.values
     t_norm_array = np.minimum(user_array, neighbor_array)
-    summ = np.sum(t_norm_array)
+    # obtain alpha cut
+    if alpha != -1:
+        t_norm_filtered = np.where(t_norm_array > alpha, t_norm_array, 0)
+    else:
+        t_norm_filtered = t_norm_array
+    summ = np.sum(t_norm_filtered)
     sum_user = np.sum(user_array)
     return round(summ / sum_user, 2)
 

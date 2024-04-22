@@ -1,3 +1,5 @@
+import os
+
 import pandas as pd
 
 
@@ -65,6 +67,8 @@ def prepare_cross_validation_sets(data_users, users, folds=10, seed_base=42):
 
 def save_filtered_users(users, top_n_users_ids):
     # Save the filtered users to a pickle file
+    if not os.path.exists('../../data/user_data/'):
+        os.makedirs('../../data/user_data/')
     filtered_users = users[users['user_id'].isin(top_n_users_ids)]
     filtered_users.to_pickle('../../data/user_data/users.pkl')
 
@@ -81,12 +85,18 @@ def main():
     filtered_ratings, top_n_users_ids = filter_top_n_users(ratings_items_merged)
     filtered_data, filtered_items = filter_frequently_rated_movies(filtered_ratings, items)
 
+    if not os.path.exists('../../data/item_data/'):
+        os.makedirs('../../data/item_data/')
     # Save filtered items
     filtered_items.to_pickle('../../data/item_data/items.pkl')
 
     # Save filtered users
     save_filtered_users(users, top_n_users_ids)
 
+    if not os.path.exists('../../data/training_data/'):
+        os.makedirs('../../data/training_data/')
+    if not os.path.exists('../../data/test_data/'):
+        os.makedirs('../../data/test_data/')
     # Prepare and save cross-validation sets
     cross_validation_sets = prepare_cross_validation_sets(filtered_data, users)
     for i, (train_set, test_set) in enumerate(cross_validation_sets):

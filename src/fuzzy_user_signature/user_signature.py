@@ -14,17 +14,17 @@ def create_matrix_ones(movies, user_activity):
 
 
 def calc_film_attractivity(matrix):
-    topic_attract = (matrix != 0).sum(axis=1) / (matrix != 0).sum(axis=1).max()
+    topic_attract = (matrix != 0).sum(axis=0) / (matrix != 0).sum(axis=0).max()
     return topic_attract.round(2)
 
 
 def calc_tag_popularity(matrix):
-    film_pop = np.count_nonzero(matrix, axis=0) / np.count_nonzero(matrix, axis=0).max()
+    film_pop = np.count_nonzero(matrix, axis=1) / np.count_nonzero(matrix, axis=1).max()
     return film_pop.round(2)
 
 
 def calc_user_signature(matrix, tag_popularity):
-    user_signature = matrix.multiply(tag_popularity, axis="columns")
+    user_signature = matrix.multiply(tag_popularity, axis="index")
     return user_signature
 
 def main():
