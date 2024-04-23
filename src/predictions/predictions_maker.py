@@ -5,13 +5,13 @@ from tqdm import tqdm
 import os
 
 # Definisce una funzione per caricare i dati necessari per un determinato esperimento.
-def load_data(experiment):
+def load_data(experiment, alpha):
     # Carica i dati di allenamento da un file pickle.
     training_data = pd.read_pickle(f'../../data/training_data/training{experiment}.pkl')
     # Carica i dati di test da un file pickle.
     test_data = pd.read_pickle(f'../../data/test_data/test{experiment}.pkl')
     # Carica i dati sui vicini da un file pickle.
-    neighbors_data = pd.read_pickle(f'../../data/neighbors_data/F-neighbors-{experiment}.pkl')
+    neighbors_data = pd.read_pickle(f'../../data/neighbors_data/alpha{alpha}/F-neighbors-{experiment}.pkl')
     # Restituisce i tre set di dati caricati.
     return training_data, test_data, neighbors_data
 
@@ -48,9 +48,9 @@ def make_prediction(user_id, movie_id, training_data, neighbors):
     return round(prediction)
 
 # Definisce una funzione per calcolare tutte le previsioni per un determinato esperimento.
-def calc_all_predictions(experiment, num_neighbors):
+def calc_all_predictions(experiment, num_neighbors, alpha):
     # Carica i dati necessari.
-    training_data, test_data, neighbors_data = load_data(experiment)
+    training_data, test_data, neighbors_data = load_data(experiment, alpha)
 
     # Lista per conservare tutte le previsioni.
     predictions = []
@@ -78,21 +78,23 @@ def calc_all_predictions(experiment, num_neighbors):
 
     # Salva le previsioni in un DataFrame e poi in un file pickle.
     predictions_df = pd.DataFrame(predictions)
-    predictions_df.to_pickle(f'{output_dir}/Predictions-{experiment}-{num_neighbors}.pkl')
+    predictions_df.to_pickle(f'{output_dir}/Predictions-{experiment}-{num_neighbors}-{alpha}.pkl')
 
     # Stampa un messaggio di conferma.
-    print(f"Predictions for experiment {experiment} with {num_neighbors} neighbors have been saved.")
+    print(f"Predictions for experiment {experiment} with {num_neighbors} neighbors and alpha {alpha} have been saved.")
 def main():
-    #experiments_neigh = [1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
-    experiments_neigh = [1, 2, 4, 6, 8, 10]
+    experiments_neigh = [1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30]
+    #experiments_neigh = [1, 2, 4, 6, 8, 10]
+
 
     # Itera su ogni esperimento (assumendo 10 esperimenti in totale).
     for experiment in range(10):
         print(f"########### Starting experiment {experiment} ###########")
         for num_neighbors in experiments_neigh:
             print(f"Calculating predictions with {num_neighbors} neighbors...")
-            # Calcola le previsioni per l'esperimento corrente e il numero di vicini specificato.
-            calc_all_predictions(experiment, num_neighbors)
+            for a in range(4): # 4 valori di alpha cut: 0, 0.25, 0.5, 0.7, usiamo 1 2 3 4 per dare nome ai file
+                # Calcola le previsioni per l'esperimento corrente e il numero di vicini specificato.
+                calc_all_predictions(experiment, num_neighbors, a)
 # Punto di ingresso principale dello script.
 if __name__ == "__main__":
     main()

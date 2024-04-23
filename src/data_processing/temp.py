@@ -26,6 +26,7 @@ def main():
                 dati = pd.read_pickle(percorso_file)
                 np_dati = dati.values
                 np_dati_filtrati = np_dati[np_dati != 0]
+                print(np_dati_filtrati)
                 minimi.append(np.min(np_dati_filtrati))
                 massimi.append(np.max(np_dati_filtrati))
                 mediane.append(np.median(np_dati_filtrati))

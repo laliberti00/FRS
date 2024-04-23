@@ -90,96 +90,98 @@ def calc_coverage(user_test, predictions):
 
 
 def main():
-    #experiments_neigh = [1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
-    experiments_neigh = [1, 2, 4, 6, 8, 10]
+    experiments_neigh = [1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30]
+    #experiments_neigh = [1, 2, 4, 6, 8, 10]
     num_experiments_data = list(range(10))
 
-    overall_metrics = {}
+    for alpha in range(4):
+        print(f'######### ALPHA {alpha} #########')
+        overall_metrics = {}
 
-    for experiment in tqdm(num_experiments_data):
-        fold_metrics = {
-            num: {'MAE': [], 'MAE_users': [], 'RMSE': [], 'RMSE_users': [], 'Coverage_Pos': [], 'Coverage_Neg': [], 'Coverage_Tot': []}
-            for num
-            in experiments_neigh}
+        for experiment in tqdm(num_experiments_data):
+            fold_metrics = {
+                num: {'MAE': [], 'MAE_users': [], 'RMSE': [], 'RMSE_users': [], 'Coverage_Pos': [], 'Coverage_Neg': [], 'Coverage_Tot': []}
+                for num
+                in experiments_neigh}
 
-        evaluation_folder = '../../data/evaluation'
+            evaluation_folder = '../../data/evaluation'
 
-        if not os.path.exists(evaluation_folder):
-            os.makedirs(evaluation_folder)
+            if not os.path.exists(evaluation_folder):
+                os.makedirs(evaluation_folder)
 
-        for num_neighbors in experiments_neigh:
-            predictions_file = f'../../data/predictions/Predictions-{experiment}-{num_neighbors}.pkl'
-            test_file = f'../../data/test_data/test{experiment}.pkl'
+            for num_neighbors in experiments_neigh:
+                predictions_file = f'../../data/predictions/Predictions-{experiment}-{num_neighbors}-{alpha}.pkl'
+                test_file = f'../../data/test_data/test{experiment}.pkl'
 
-            predictions = pd.read_pickle(predictions_file)
-            test_set = pd.read_pickle(test_file)
+                predictions = pd.read_pickle(predictions_file)
+                test_set = pd.read_pickle(test_file)
 
-            mae = calc_mae(predictions, test_set)
-            rmse = calc_rmse(predictions, test_set)
-            coverage_pos, coverage_neg, coverage_tot = calc_coverage(test_set, predictions)
+                mae = calc_mae(predictions, test_set)
+                rmse = calc_rmse(predictions, test_set)
+                coverage_pos, coverage_neg, coverage_tot = calc_coverage(test_set, predictions)
 
-            fold_metrics[num_neighbors]['MAE'].append(mae)
-            fold_metrics[num_neighbors]['RMSE'].append(rmse)
-            fold_metrics[num_neighbors]['Coverage_Pos'].append(coverage_pos)
-            fold_metrics[num_neighbors]['Coverage_Neg'].append(coverage_neg)
-            fold_metrics[num_neighbors]['Coverage_Tot'].append(coverage_tot)
+                fold_metrics[num_neighbors]['MAE'].append(mae)
+                fold_metrics[num_neighbors]['RMSE'].append(rmse)
+                fold_metrics[num_neighbors]['Coverage_Pos'].append(coverage_pos)
+                fold_metrics[num_neighbors]['Coverage_Neg'].append(coverage_neg)
+                fold_metrics[num_neighbors]['Coverage_Tot'].append(coverage_tot)
 
 
-            grouped_predictions = predictions.groupby('user_id')
-            individual_mae_users = []
-            individual_rmse_users = []
+                grouped_predictions = predictions.groupby('user_id')
+                individual_mae_users = []
+                individual_rmse_users = []
 
-            for user_id, group in grouped_predictions:
+                for user_id, group in grouped_predictions:
 
-                user_test = test_set[test_set['user_id'] == user_id]
-                user_predictions = group[['user_id', 'movie_id', 'predicted_rating']].reset_index(drop=True)
+                    user_test = test_set[test_set['user_id'] == user_id]
+                    user_predictions = group[['user_id', 'movie_id', 'predicted_rating']].reset_index(drop=True)
 
-                mae_users = calc_mae(user_predictions, user_test)
-                if mae_users is not None:
-                    individual_mae_users.append(mae_users)
-                rmse_users = calc_rmse(user_predictions, user_test)
-                if rmse_users is not None:
-                    individual_rmse_users.append(rmse_users)
+                    mae_users = calc_mae(user_predictions, user_test)
+                    if mae_users is not None:
+                        individual_mae_users.append(mae_users)
+                    rmse_users = calc_rmse(user_predictions, user_test)
+                    if rmse_users is not None:
+                        individual_rmse_users.append(rmse_users)
 
-            fold_metrics[num_neighbors]['MAE_users'] = np.mean(individual_mae_users)
-            fold_metrics[num_neighbors]['RMSE_users'] = np.mean(individual_rmse_users)
+                fold_metrics[num_neighbors]['MAE_users'] = np.mean(individual_mae_users)
+                fold_metrics[num_neighbors]['RMSE_users'] = np.mean(individual_rmse_users)
 
-        results_filename = f'fold_{experiment}_metrics.pkl'
-        with open(os.path.join(evaluation_folder, results_filename), 'wb') as f:
-            pickle.dump(fold_metrics, f)
-        overall_metrics[experiment] = fold_metrics
+            results_filename = f'fold_{experiment}_{alpha}_metrics.pkl'
+            with open(os.path.join(evaluation_folder, results_filename), 'wb') as f:
+                pickle.dump(fold_metrics, f)
+            overall_metrics[experiment] = fold_metrics
 
-    print(overall_metrics)
+        print(overall_metrics)
 
-    # Analisi e stampa dei risultati per ogni fold
-    for experiment, metrics in overall_metrics.items():
-        print(f"\nResults for Fold {experiment}:")
-        for num_neighbors, values in metrics.items():
+        # Analisi e stampa dei risultati per ogni fold
+        for experiment, metrics in overall_metrics.items():
+            print(f"\nResults for Fold {experiment}:")
+            for num_neighbors, values in metrics.items():
+                print(f"\nNumber of Neighbors: {num_neighbors}")
+                for metric, results in values.items():
+                    mean_val = np.mean(results)
+                    std_val = np.std(results)
+                    print(f"{metric}: Mean = {mean_val:.3f}, Std = {std_val:.3f}")
+
+        # Calcola e stampa i risultati aggregati su tutti i fold
+        aggregated_results = {
+            num: {'MAE': [], 'MAE_users': [], 'RMSE': [],'RMSE_users': [], 'Coverage_Pos': [], 'Coverage_Neg': [], 'Coverage_Tot': []} for
+            num in experiments_neigh}
+        for experiment, metrics in overall_metrics.items():
+            for num_neighbors, values in metrics.items():
+                for metric, results in values.items():
+                    if isinstance(results, list):  # Se results è una lista
+                        aggregated_results[num_neighbors][metric].extend(results)
+                    else:  # Se results è un singolo valore
+                        aggregated_results[num_neighbors][metric].append(results)
+
+        print("\nAggregated Results Across All Folds:")
+        for num_neighbors, values in aggregated_results.items():
             print(f"\nNumber of Neighbors: {num_neighbors}")
             for metric, results in values.items():
                 mean_val = np.mean(results)
                 std_val = np.std(results)
                 print(f"{metric}: Mean = {mean_val:.3f}, Std = {std_val:.3f}")
-
-    # Calcola e stampa i risultati aggregati su tutti i fold
-    aggregated_results = {
-        num: {'MAE': [], 'MAE_users': [], 'RMSE': [],'RMSE_users': [], 'Coverage_Pos': [], 'Coverage_Neg': [], 'Coverage_Tot': []} for
-        num in experiments_neigh}
-    for experiment, metrics in overall_metrics.items():
-        for num_neighbors, values in metrics.items():
-            for metric, results in values.items():
-                if isinstance(results, list):  # Se results è una lista
-                    aggregated_results[num_neighbors][metric].extend(results)
-                else:  # Se results è un singolo valore
-                    aggregated_results[num_neighbors][metric].append(results)
-
-    print("\nAggregated Results Across All Folds:")
-    for num_neighbors, values in aggregated_results.items():
-        print(f"\nNumber of Neighbors: {num_neighbors}")
-        for metric, results in values.items():
-            mean_val = np.mean(results)
-            std_val = np.std(results)
-            print(f"{metric}: Mean = {mean_val:.3f}, Std = {std_val:.3f}")
 
 
 if __name__ == "__main__":
