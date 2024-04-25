@@ -32,9 +32,10 @@ def main(trains):
     alpha_cuts = [0, 0.25, 0.5, 0.7]
     for num_train in range(trains):
         data_users, users = load_filter_data(num_train)
-        data_neigh = []
-
+        print(f'## Experiment {num_train}')
         for k, a in enumerate(alpha_cuts):
+            data_neigh = []
+            print(f'# Alpha {a} {k}')
             if not os.path.exists(f"../../data/neighbors_data/alpha{k}"):
                 os.makedirs(f"../../data/neighbors_data/alpha{k}")
 

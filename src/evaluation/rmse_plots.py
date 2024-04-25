@@ -5,49 +5,43 @@ import os
 
 # Percorso alla cartella dove sono salvati i file delle metriche
 evaluation_folder = '../../data/evaluation'
-experiments_neigh = [1, 2, 4, 6, 8, 10]
+experiments_neigh = [1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30]
 num_experiments_data = 10  # Numero di esperimenti
 
-# Inizializza le liste per conservare le metriche medie per ogni numero di vicini
-maes = {k: [] for k in experiments_neigh}
-maes_users = {k: [] for k in experiments_neigh}
-rmses = {k: [] for k in experiments_neigh}
-rmses_users = {k: [] for k in experiments_neigh}
-coverage_pos = {k: [] for k in experiments_neigh}
-coverage_neg = {k: [] for k in experiments_neigh}
-coverage_tot = {k: [] for k in experiments_neigh}
+if not os.path.exists(f"../../data/plots"):
+    os.makedirs(f"../../data/plots")
 
-# Carica e aggrega le metriche da ogni file
-for experiment in range(num_experiments_data):
-    file_path = os.path.join(evaluation_folder, f'fold_{experiment}_metrics.pkl')
-    with open(file_path, 'rb') as file:
-        metrics = pickle.load(file)
-        for k in experiments_neigh:
-            maes[k].append(np.mean(metrics[k]['MAE']))
-            maes_users[k].append(np.mean(metrics[k]['MAE_users']))
-            rmses[k].append(np.mean(metrics[k]['RMSE']))
-            rmses_users[k].append(np.mean(metrics[k]['RMSE_users']))
-            coverage_pos[k].append(np.mean(metrics[k]['Coverage_Pos']))
-            coverage_neg[k].append(np.mean(metrics[k]['Coverage_Neg']))
-            coverage_tot[k].append(np.mean(metrics[k]['Coverage_Tot']))
-
-# Neighborhood sizes
-range_neigh = [1, 2, 4, 6, 8, 10]
-rmses_means = [np.mean(rmses[k]) for k in experiments_neigh]
-rmses_users_means = [np.mean(rmses_users[k]) for k in experiments_neigh]
-
-
-
-# Set the positions for the bars on the x-axis
-positions = range(len(range_neigh))
-
-x_values = np.array(experiments_neigh)  # Usare la lista 'experiments_neigh' per l'asse x
+colors = ['b', 'g', 'r', 'c']  # Colori per le diverse linee di alpha
+labels = [r'$\alpha=0$', r'$\alpha=0.25$', r'$\alpha=0.5$', r'$\alpha=0.7$']  # Etichette per la legenda
+markers = ['o', 's', '^', 'd']  # Marker per i diversi alpha
 
 # Creare il grafico
 plt.figure(figsize=(10, 6))
 
-# Disegnare le linee per MAE e MAE degli utenti
-plt.plot(x_values, rmses_users_means,  label='RMSE', marker='o')
+for alpha in range(4):
+    # Inizializza le liste per conservare le metriche medie per ogni numero di vicini
+    rmses = {k: [] for k in experiments_neigh}
+    rmses_users = {k: [] for k in experiments_neigh}
+
+    # Carica e aggrega le metriche da ogni file
+    for experiment in range(num_experiments_data):
+        file_path = os.path.join(evaluation_folder, f'fold_{experiment}_{alpha}_metrics.pkl')
+        with open(file_path, 'rb') as file:
+            metrics = pickle.load(file)
+            for k in experiments_neigh:
+                rmses[k].append(np.mean(metrics[k]['RMSE']))
+                rmses_users[k].append(np.mean(metrics[k]['RMSE_users']))
+
+    # Neighborhood sizes
+    range_neigh =  [1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30]
+    rmses_means = [np.mean(rmses[k]) for k in experiments_neigh]
+    rmses_users_means = [np.mean(rmses_users[k]) for k in experiments_neigh]
+
+    # Disegnare le linee per RMSE e RMSE degli utenti
+    plt.plot(experiments_neigh, rmses_means, label=labels[alpha] + ' (RMSE Data)', marker=markers[alpha],
+             color=colors[alpha])
+    plt.plot(experiments_neigh, rmses_users_means, label=labels[alpha] + ' (RMSE Users)', marker=markers[alpha],
+             linestyle='--', color=colors[alpha])
 
 # Aggiungere legenda e etichette
 plt.xlabel('Number of Neighbors', fontsize=14, fontweight='bold')
@@ -55,5 +49,4 @@ plt.ylabel('Root Mean Squared Error', fontsize=14, fontweight='bold')
 plt.title('RMSE for Varying Number of Neighbors', fontsize=16, fontweight='bold')
 plt.legend()
 
-# Mostrare il grafico
-plt.show()
+plt.savefig(f'../../data/plots/rmse_combined.png')
